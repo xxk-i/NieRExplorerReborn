@@ -104,6 +104,9 @@ namespace NieRExplorer
 		private Label label1;
 
 		private ToolStripMenuItem createDATFileToolStripMenuItem;
+		
+		// For filtering
+		private ListViewItem[] cpkListItems;
 
 		public BrowserForm()
 		{
@@ -544,10 +547,14 @@ namespace NieRExplorer
 
 		private void PopulateListViewWithCPKFiles(string cpkPath)
 		{
-			if (cpkListView.Items.Count > 0)
-			{
-				cpkListView.Items.Clear();
-			}
+			//if (cpkListView.Items.Count > 0)
+			//{
+			//	cpkListView.Items.Clear();
+			//}
+			// reset the list, and instead of adding them directly to the list view, add items to this list and then populate a filtered
+			// view on the list view
+			cpkListItems.clear();
+			
 			cpkListView.Groups.Clear();
 			currentlyOpenCPK = new CPKData(cpkPath);
 			for (int i = 0; i < currentlyOpenCPK.Tables.Count; i++)
@@ -573,7 +580,8 @@ namespace NieRExplorer
 					listViewItem.SubItems.Add(ParseFileSize(cPKTable.FileSize));
 					listViewItem.SubItems.Add(cPKTable.FileName);
 					listViewItem.ImageIndex = fileExtensionsData.ImageIndex;
-					cpkListView.Items.Add(listViewItem);
+					//cpkListView.Items.Add(listViewItem);
+					cpkListItems.Add(listViewItem);
 				}
 				if (prefixSplit[0] == string.Empty)
 				{
@@ -589,8 +597,8 @@ namespace NieRExplorer
 					listViewItem2.SubItems.Add(ParseFileSize(cPKTable.FileSize));
 					listViewItem2.SubItems.Add(cPKTable.FileName);
 					listViewItem2.ImageIndex = fileExtensionsData.ImageIndex;
-					cpkListView.Items.Add(listViewItem2);
-				}
+					//cpkListView.Items.Add(listViewItem2);
+					cpkListItems.Add(listViewItem2);				}
 				if (prefixSplit.Length == 1)
 				{
 					string prefixType3 = PrefixData.GetPrefixType(prefixSplit[0]);
@@ -605,10 +613,21 @@ namespace NieRExplorer
 					listViewItem3.SubItems.Add(ParseFileSize(cPKTable.FileSize));
 					listViewItem3.SubItems.Add(cPKTable.FileName);
 					listViewItem3.ImageIndex = fileExtensionsData.ImageIndex;
-					cpkListView.Items.Add(listViewItem3);
+					//cpkListView.Items.Add(listViewItem3);
+					cpkListItems.Add(listViewItem3);
 				}
 			}
+			
 			cpkListView.AutoResizeColumns(ColumnHeaderAutoResizeStyle.ColumnContent);
+		}
+		
+		private void PopulateFilteredListFromItems(ListViewItem[] listItems) 
+		{
+			// first clear the view
+			cpkListView.Items.clear();
+			
+			// filter the list by the search query and set the resulting list on the list view
+			//cpkListView.AddAll(cpkListItems.filter(SOME_QUERY));
 		}
 
 		private int GetIndexOfGroup(ListView listView, string header)
