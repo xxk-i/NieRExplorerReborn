@@ -107,6 +107,8 @@ namespace NieRExplorer
 		
 		// For filtering
 		private ListViewItem[] cpkListItems;
+		// Pro tip: always just store this lowercase
+		private String currentSearchQuery = "";
 
 		public BrowserForm()
 		{
@@ -621,6 +623,7 @@ namespace NieRExplorer
 			cpkListView.AutoResizeColumns(ColumnHeaderAutoResizeStyle.ColumnContent);
 		}
 		
+		// Use the current search query as a filter and set the list items
 		private void PopulateFilteredListFromItems(ListViewItem[] listItems) 
 		{
 			// first clear the view
@@ -628,6 +631,15 @@ namespace NieRExplorer
 			
 			// filter the list by the search query and set the resulting list on the list view
 			//cpkListView.AddAll(cpkListItems.filter(SOME_QUERY));
+			if (currentSearchQuery.Length() == 0) 
+			{
+				cpkListView.Items.AddRange(cpkListItems);
+			}
+			else
+			{
+				// Add the list items filtering by their "text" attribute (I think this is correct)
+				cpkListView.Items.AddRange(cpkListItems.Where(listItem => listItem.Text.ToLowerInvariant().Contains(currentSearchQuery)))
+			}
 		}
 
 		private int GetIndexOfGroup(ListView listView, string header)
