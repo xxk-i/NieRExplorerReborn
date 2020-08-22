@@ -118,6 +118,7 @@ namespace NieRExplorer
 
 		private void BrowserForm_Load(object sender, EventArgs e)
 		{
+			/*
 			if (currentVersion < serverVersion)
 			{
 				DialogResult dialogResult = MessageBox.Show($"A new version of NieR:Explorer is available (Version: {serverVersion.ToString()}) Would you like to go to the website and download the new version?", "New Version", MessageBoxButtons.YesNo, MessageBoxIcon.Asterisk);
@@ -126,7 +127,7 @@ namespace NieRExplorer
 					Process.Start("http://dennisstanistan.com/#nierexplorer");
 					Application.Exit();
 				}
-			}
+			}*/
 			InitFileSystemWatcher();
 			InitTempFolder();
 			InitImageList();

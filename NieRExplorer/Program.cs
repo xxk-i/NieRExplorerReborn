@@ -17,28 +17,16 @@ namespace NieRExplorer
 
 		public static Version ServerVersion
 		{
-			get
-			{
-				try
-				{
-					WebClient webClient = new WebClient();
-					byte[] bytes = webClient.DownloadData("http://www.dennisstanistan.com/nierexplorer/nierexplorerver.txt");
-					return new Version(Encoding.UTF8.GetString(bytes));
-				}
-				catch
-				{
-					return CurrentVersion;
-				}
-			}
+            get { return CurrentVersion; }
 		}
 
 		[STAThread]
 		private static void Main()
 		{
-			/*AppDomain.CurrentDomain.FirstChanceException += delegate(object sender, FirstChanceExceptionEventArgs eventArgs)
+			AppDomain.CurrentDomain.FirstChanceException += delegate(object sender, FirstChanceExceptionEventArgs eventArgs)
 			{
 				MessageBox.Show(eventArgs.Exception.ToString());
-			};*/
+			};
 			CallSettings();
 			Application.EnableVisualStyles();
 			Application.SetCompatibleTextRenderingDefault(defaultValue: false);
