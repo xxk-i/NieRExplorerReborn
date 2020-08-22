@@ -35,10 +35,10 @@ namespace NieRExplorer
 		[STAThread]
 		private static void Main()
 		{
-			AppDomain.CurrentDomain.FirstChanceException += delegate(object sender, FirstChanceExceptionEventArgs eventArgs)
+			/*AppDomain.CurrentDomain.FirstChanceException += delegate(object sender, FirstChanceExceptionEventArgs eventArgs)
 			{
 				MessageBox.Show(eventArgs.Exception.ToString());
-			};
+			};*/
 			CallSettings();
 			Application.EnableVisualStyles();
 			Application.SetCompatibleTextRenderingDefault(defaultValue: false);

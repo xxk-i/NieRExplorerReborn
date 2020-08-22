@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Media;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -104,9 +105,7 @@ namespace NieRExplorer
 		private Label label1;
 
 		private ToolStripMenuItem createDATFileToolStripMenuItem;
-		
-		// For filtering
-		private ListViewItem[] cpkListItems;
+        private TextBox CPKSearchBox;
 
 		public BrowserForm()
 		{
@@ -545,16 +544,33 @@ namespace NieRExplorer
 			}
 		}
 
+		// Actually just a directory
+		private class CPKGroup
+        {
+			public CPKGroup(String name)
+            {
+				dirName = name;
+            }
+
+			String headerName()
+            {
+				return $"{dirName} ({children.Count} Files)";
+			}
+
+			public ListViewGroup group()
+            {
+				return new ListViewGroup(headerName());
+            }
+
+			String dirName;
+			public List<ListViewItem> children = new List<ListViewItem>();
+        }
+
+		private List<String> directoryList = new List<String>();
+		private Dictionary<String, CPKGroup> cpkGroupDict = new Dictionary<string, CPKGroup>();
+
 		private void PopulateListViewWithCPKFiles(string cpkPath)
 		{
-			//if (cpkListView.Items.Count > 0)
-			//{
-			//	cpkListView.Items.Clear();
-			//}
-			// reset the list, and instead of adding them directly to the list view, add items to this list and then populate a filtered
-			// view on the list view
-			cpkListItems.clear();
-			
 			cpkListView.Groups.Clear();
 			currentlyOpenCPK = new CPKData(cpkPath);
 			for (int i = 0; i < currentlyOpenCPK.Tables.Count; i++)
@@ -569,65 +585,101 @@ namespace NieRExplorer
 				if (prefixSplit[0] != string.Empty && prefixSplit.Length > 1)
 				{
 					string prefixType = PrefixData.GetPrefixType(prefixSplit[0]);
-					int num = currentlyOpenCPK.Tables.Where((CPKTable x) => x.FileName.StartsWith(prefixSplit[0])).Count();
-					string header = $"{prefixType} ({num} Files)";
-					if (!GroupExists(cpkListView, header))
+
+					CPKGroup g;
+					if (!cpkGroupDict.ContainsKey(prefixType))
 					{
-						int num2 = cpkListView.Groups.Add(new ListViewGroup(header));
+						g = new CPKGroup(prefixType);
+						directoryList.Add(prefixType);
+						cpkGroupDict[prefixType] = g;
 					}
-					ListViewItem listViewItem = new ListViewItem(cPKTable.LocalName, fileExtensionsData.ImageIndex, cpkListView.Groups[GetIndexOfGroup(cpkListView, header)]);
+
+					else
+                    {
+						g = cpkGroupDict[prefixType];
+					}
+
+					ListViewItem listViewItem = new ListViewItem(cPKTable.LocalName, fileExtensionsData.ImageIndex);
 					listViewItem.SubItems.Add(fileExtensionsData.Type);
 					listViewItem.SubItems.Add(ParseFileSize(cPKTable.FileSize));
 					listViewItem.SubItems.Add(cPKTable.FileName);
 					listViewItem.ImageIndex = fileExtensionsData.ImageIndex;
-					//cpkListView.Items.Add(listViewItem);
-					cpkListItems.Add(listViewItem);
+					cpkGroupDict[prefixType].children.Add(listViewItem);
 				}
 				if (prefixSplit[0] == string.Empty)
 				{
-					string prefixType2 = PrefixData.GetPrefixType(prefixSplit[0]);
-					int num3 = currentlyOpenCPK.Tables.Where((CPKTable x) => x.FileName.Split('/')[0] == string.Empty).Count();
-					string header2 = $"Root ({num3} Files)";
-					if (!GroupExists(cpkListView, header2))
+					String prefixType = "Root1";
+					CPKGroup g;
+					if (!cpkGroupDict.ContainsKey(prefixType))
 					{
-						int num4 = cpkListView.Groups.Add(new ListViewGroup(header2));
+						g = new CPKGroup(prefixType);
+						directoryList.Add(prefixType);
+						cpkGroupDict[prefixType] = g;
 					}
-					ListViewItem listViewItem2 = new ListViewItem(cPKTable.LocalName, fileExtensionsData.ImageIndex, cpkListView.Groups[GetIndexOfGroup(cpkListView, header2)]);
+
+					else
+					{
+						g = cpkGroupDict[prefixType];
+					}
+					ListViewItem listViewItem2 = new ListViewItem(cPKTable.LocalName, fileExtensionsData.ImageIndex);
 					listViewItem2.SubItems.Add(fileExtensionsData.Type);
 					listViewItem2.SubItems.Add(ParseFileSize(cPKTable.FileSize));
 					listViewItem2.SubItems.Add(cPKTable.FileName);
 					listViewItem2.ImageIndex = fileExtensionsData.ImageIndex;
-					//cpkListView.Items.Add(listViewItem2);
-					cpkListItems.Add(listViewItem2);				}
+					g.children.Add(listViewItem2);	
+				}
 				if (prefixSplit.Length == 1)
 				{
-					string prefixType3 = PrefixData.GetPrefixType(prefixSplit[0]);
-					int num5 = currentlyOpenCPK.Tables.Where((CPKTable x) => x.FileName.Split('/').Length == 1).Count();
-					string header3 = $"Root ({num5} Files)";
-					if (!GroupExists(cpkListView, header3))
+					String prefixType = "Root2";
+					CPKGroup g;
+					if (!cpkGroupDict.ContainsKey(prefixType))
 					{
-						int num6 = cpkListView.Groups.Add(new ListViewGroup(header3));
+						g = new CPKGroup(prefixType);
+						directoryList.Add(prefixType);
+						cpkGroupDict[prefixType] = g;
 					}
-					ListViewItem listViewItem3 = new ListViewItem(cPKTable.LocalName, fileExtensionsData.ImageIndex, cpkListView.Groups[GetIndexOfGroup(cpkListView, header3)]);
+
+					else
+					{
+						g = cpkGroupDict[prefixType];
+					}
+					ListViewItem listViewItem3 = new ListViewItem(cPKTable.LocalName, fileExtensionsData.ImageIndex);
 					listViewItem3.SubItems.Add(fileExtensionsData.Type);
 					listViewItem3.SubItems.Add(ParseFileSize(cPKTable.FileSize));
 					listViewItem3.SubItems.Add(cPKTable.FileName);
 					listViewItem3.ImageIndex = fileExtensionsData.ImageIndex;
-					//cpkListView.Items.Add(listViewItem3);
-					cpkListItems.Add(listViewItem3);
+					g.children.Add(listViewItem3);
 				}
 			}
 			
+			PopulateFilteredListFromItems("");
 			cpkListView.AutoResizeColumns(ColumnHeaderAutoResizeStyle.ColumnContent);
 		}
-		
-		private void PopulateFilteredListFromItems(ListViewItem[] listItems) 
+
+		private void CPKSearchBox_TextChanged(object sender, EventArgs e)
+		{
+			PopulateFilteredListFromItems(CPKSearchBox.Text);
+		}
+
+		private void PopulateFilteredListFromItems(String filter) 
 		{
 			// first clear the view
-			cpkListView.Items.clear();
-			
-			// filter the list by the search query and set the resulting list on the list view
-			//cpkListView.AddAll(cpkListItems.filter(SOME_QUERY));
+			cpkListView.Items.Clear();
+
+			foreach(String dir in directoryList)
+            {
+				CPKGroup g = cpkGroupDict[dir];
+				List<ListViewItem> l = g.children.Where<ListViewItem>(x => x.Text.Contains(filter)).ToList();
+				if (l.Count == 0) continue;
+
+				ListViewGroup group = g.group();
+				cpkListView.Groups.Add(group);
+				foreach (ListViewItem item in l)
+                {
+					item.Group = group;
+					cpkListView.Items.Add(item);
+				}
+            }
 		}
 
 		private int GetIndexOfGroup(ListView listView, string header)
@@ -956,259 +1008,351 @@ namespace NieRExplorer
 
 		private void InitializeComponent()
 		{
-			System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(NieRExplorer.BrowserForm));
-			statusStrip1 = new System.Windows.Forms.StatusStrip();
-			statusLabel = new System.Windows.Forms.ToolStripStatusLabel();
-			storageStatusLabel = new System.Windows.Forms.ToolStripStatusLabel();
-			explorerTreeView = new System.Windows.Forms.TreeView();
-			splitContainer1 = new System.Windows.Forms.SplitContainer();
-			tabControl = new System.Windows.Forms.TabControl();
-			greetTabPage = new System.Windows.Forms.TabPage();
-			greetPanel = new System.Windows.Forms.Panel();
-			label1 = new System.Windows.Forms.Label();
-			linkLabel2 = new System.Windows.Forms.LinkLabel();
-			linkLabel1 = new System.Windows.Forms.LinkLabel();
-			mainLogoPictureBox = new System.Windows.Forms.PictureBox();
-			fileBrowserTab = new System.Windows.Forms.TabPage();
-			toolStrip1 = new System.Windows.Forms.ToolStrip();
-			saveChangesCPKBtn = new System.Windows.Forms.ToolStripButton();
-			cpkListView = new System.Windows.Forms.ListView();
-			explorerListView = new System.Windows.Forms.ListView();
-			menuStrip = new System.Windows.Forms.MenuStrip();
-			editToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-			optionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-			helpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-			checkForUpdatesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-			toolStripMenuItem1 = new System.Windows.Forms.ToolStripSeparator();
-			aboutNieRExplorerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-			createDATFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-			statusStrip1.SuspendLayout();
-			((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
-			splitContainer1.Panel1.SuspendLayout();
-			splitContainer1.Panel2.SuspendLayout();
-			splitContainer1.SuspendLayout();
-			tabControl.SuspendLayout();
-			greetTabPage.SuspendLayout();
-			greetPanel.SuspendLayout();
-			((System.ComponentModel.ISupportInitialize)mainLogoPictureBox).BeginInit();
-			fileBrowserTab.SuspendLayout();
-			toolStrip1.SuspendLayout();
-			menuStrip.SuspendLayout();
-			SuspendLayout();
-			statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[2]
-			{
-				statusLabel,
-				storageStatusLabel
-			});
-			statusStrip1.Location = new System.Drawing.Point(0, 539);
-			statusStrip1.Name = "statusStrip1";
-			statusStrip1.Size = new System.Drawing.Size(784, 22);
-			statusStrip1.SizingGrip = false;
-			statusStrip1.TabIndex = 0;
-			statusStrip1.Text = "statusStrip1";
-			statusLabel.Name = "statusLabel";
-			statusLabel.Size = new System.Drawing.Size(756, 17);
-			statusLabel.Spring = true;
-			statusLabel.Text = "Ready";
-			statusLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-			storageStatusLabel.Name = "storageStatusLabel";
-			storageStatusLabel.Size = new System.Drawing.Size(13, 17);
-			storageStatusLabel.Text = "0";
-			storageStatusLabel.ToolTipText = "Temp Folder Size / Drive Size";
-			explorerTreeView.Dock = System.Windows.Forms.DockStyle.Fill;
-			explorerTreeView.Location = new System.Drawing.Point(0, 0);
-			explorerTreeView.Name = "explorerTreeView";
-			explorerTreeView.Size = new System.Drawing.Size(261, 515);
-			explorerTreeView.TabIndex = 1;
-			explorerTreeView.NodeMouseClick += new System.Windows.Forms.TreeNodeMouseClickEventHandler(explorerTreeView_NodeMouseClick);
-			explorerTreeView.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(explorerTreeView_MouseDoubleClick);
-			splitContainer1.Dock = System.Windows.Forms.DockStyle.Fill;
-			splitContainer1.Location = new System.Drawing.Point(0, 24);
-			splitContainer1.Name = "splitContainer1";
-			splitContainer1.Panel1.Controls.Add(explorerTreeView);
-			splitContainer1.Panel2.Controls.Add(tabControl);
-			splitContainer1.Panel2.Controls.Add(explorerListView);
-			splitContainer1.Size = new System.Drawing.Size(784, 515);
-			splitContainer1.SplitterDistance = 261;
-			splitContainer1.TabIndex = 2;
-			tabControl.Controls.Add(greetTabPage);
-			tabControl.Controls.Add(fileBrowserTab);
-			tabControl.Dock = System.Windows.Forms.DockStyle.Fill;
-			tabControl.Location = new System.Drawing.Point(0, 0);
-			tabControl.Name = "tabControl";
-			tabControl.SelectedIndex = 0;
-			tabControl.Size = new System.Drawing.Size(519, 515);
-			tabControl.TabIndex = 0;
-			greetTabPage.Controls.Add(greetPanel);
-			greetTabPage.Location = new System.Drawing.Point(4, 22);
-			greetTabPage.Name = "greetTabPage";
-			greetTabPage.Size = new System.Drawing.Size(511, 489);
-			greetTabPage.TabIndex = 0;
-			greetTabPage.Text = "About";
-			greetTabPage.UseVisualStyleBackColor = true;
-			greetPanel.AutoScroll = true;
-			greetPanel.Controls.Add(label1);
-			greetPanel.Controls.Add(linkLabel2);
-			greetPanel.Controls.Add(linkLabel1);
-			greetPanel.Controls.Add(mainLogoPictureBox);
-			greetPanel.Dock = System.Windows.Forms.DockStyle.Fill;
-			greetPanel.Location = new System.Drawing.Point(0, 0);
-			greetPanel.Name = "greetPanel";
-			greetPanel.Size = new System.Drawing.Size(511, 489);
-			greetPanel.TabIndex = 1;
-			label1.Anchor = (System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right);
-			label1.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75f, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0);
-			label1.Location = new System.Drawing.Point(3, 215);
-			label1.Name = "label1";
-			label1.Size = new System.Drawing.Size(500, 76);
-			label1.TabIndex = 3;
-			label1.Text = "A tool made by Dennis Stanistan\r\nCredits for wmltogther for the CriPak-Tools fork\r\nSpecial thanks to Jeremy Jacobson (xxk_)";
-			label1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-			linkLabel2.Location = new System.Drawing.Point(3, 314);
-			linkLabel2.Name = "linkLabel2";
-			linkLabel2.Size = new System.Drawing.Size(500, 23);
-			linkLabel2.TabIndex = 2;
-			linkLabel2.TabStop = true;
-			linkLabel2.Text = "https://github.com/xxk-i/DATrepacker/";
-			linkLabel2.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-			linkLabel2.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(linkLabel2_LinkClicked);
-			linkLabel1.Location = new System.Drawing.Point(3, 291);
-			linkLabel1.Name = "linkLabel1";
-			linkLabel1.Size = new System.Drawing.Size(500, 23);
-			linkLabel1.TabIndex = 2;
-			linkLabel1.TabStop = true;
-			linkLabel1.Text = "https://github.com/wmltogether/CriPakTools";
-			linkLabel1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-			linkLabel1.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(linkLabel1_LinkClicked);
-			mainLogoPictureBox.Anchor = (System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right);
-			mainLogoPictureBox.BackgroundImage = NieRExplorer.Properties.Resources.cover;
-			mainLogoPictureBox.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Center;
-			mainLogoPictureBox.Location = new System.Drawing.Point(3, 3);
-			mainLogoPictureBox.Name = "mainLogoPictureBox";
-			mainLogoPictureBox.Size = new System.Drawing.Size(505, 199);
-			mainLogoPictureBox.TabIndex = 0;
-			mainLogoPictureBox.TabStop = false;
-			fileBrowserTab.Controls.Add(toolStrip1);
-			fileBrowserTab.Controls.Add(cpkListView);
-			fileBrowserTab.Location = new System.Drawing.Point(4, 22);
-			fileBrowserTab.Name = "fileBrowserTab";
-			fileBrowserTab.Size = new System.Drawing.Size(511, 489);
-			fileBrowserTab.TabIndex = 0;
-			fileBrowserTab.Text = "File Browser";
-			fileBrowserTab.UseVisualStyleBackColor = true;
-			toolStrip1.GripStyle = System.Windows.Forms.ToolStripGripStyle.Hidden;
-			toolStrip1.ImageScalingSize = new System.Drawing.Size(30, 30);
-			toolStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[1]
-			{
-				saveChangesCPKBtn
-			});
-			toolStrip1.Location = new System.Drawing.Point(0, 0);
-			toolStrip1.Name = "toolStrip1";
-			toolStrip1.Size = new System.Drawing.Size(511, 37);
-			toolStrip1.TabIndex = 1;
-			toolStrip1.Text = "toolStrip1";
-			saveChangesCPKBtn.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-			saveChangesCPKBtn.Enabled = false;
-			saveChangesCPKBtn.Image = (System.Drawing.Image)resources.GetObject("saveChangesCPKBtn.Image");
-			saveChangesCPKBtn.ImageTransparentColor = System.Drawing.Color.Magenta;
-			saveChangesCPKBtn.Name = "saveChangesCPKBtn";
-			saveChangesCPKBtn.Size = new System.Drawing.Size(34, 34);
-			saveChangesCPKBtn.Text = "Save Changes";
-			saveChangesCPKBtn.Click += new System.EventHandler(saveChangesCPKBtn_Click);
-			cpkListView.Anchor = (System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right);
-			cpkListView.BorderStyle = System.Windows.Forms.BorderStyle.None;
-			cpkListView.FullRowSelect = true;
-			cpkListView.Location = new System.Drawing.Point(0, 40);
-			cpkListView.MultiSelect = false;
-			cpkListView.Name = "cpkListView";
-			cpkListView.Size = new System.Drawing.Size(511, 449);
-			cpkListView.TabIndex = 0;
-			cpkListView.UseCompatibleStateImageBehavior = false;
-			explorerListView.Dock = System.Windows.Forms.DockStyle.Fill;
-			explorerListView.FullRowSelect = true;
-			explorerListView.Location = new System.Drawing.Point(0, 0);
-			explorerListView.MultiSelect = false;
-			explorerListView.Name = "explorerListView";
-			explorerListView.Size = new System.Drawing.Size(519, 515);
-			explorerListView.TabIndex = 0;
-			explorerListView.UseCompatibleStateImageBehavior = false;
-			explorerListView.View = System.Windows.Forms.View.Details;
-			menuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[2]
-			{
-				editToolStripMenuItem,
-				helpToolStripMenuItem
-			});
-			menuStrip.Location = new System.Drawing.Point(0, 0);
-			menuStrip.Name = "menuStrip";
-			menuStrip.Size = new System.Drawing.Size(784, 24);
-			menuStrip.TabIndex = 3;
-			menuStrip.Text = "menuStrip1";
-			editToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[2]
-			{
-				createDATFileToolStripMenuItem,
-				optionsToolStripMenuItem
-			});
-			editToolStripMenuItem.Name = "editToolStripMenuItem";
-			editToolStripMenuItem.Size = new System.Drawing.Size(39, 20);
-			editToolStripMenuItem.Text = "Edit";
-			optionsToolStripMenuItem.Name = "optionsToolStripMenuItem";
-			optionsToolStripMenuItem.Size = new System.Drawing.Size(154, 22);
-			optionsToolStripMenuItem.Text = "Options";
-			optionsToolStripMenuItem.Click += new System.EventHandler(optionsToolStripMenuItem_Click);
-			helpToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[3]
-			{
-				checkForUpdatesToolStripMenuItem,
-				toolStripMenuItem1,
-				aboutNieRExplorerToolStripMenuItem
-			});
-			helpToolStripMenuItem.Name = "helpToolStripMenuItem";
-			helpToolStripMenuItem.Size = new System.Drawing.Size(44, 20);
-			helpToolStripMenuItem.Text = "Help";
-			checkForUpdatesToolStripMenuItem.Name = "checkForUpdatesToolStripMenuItem";
-			checkForUpdatesToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
-			checkForUpdatesToolStripMenuItem.Text = "Check for Updates";
-			checkForUpdatesToolStripMenuItem.Click += new System.EventHandler(checkForUpdatesToolStripMenuItem_Click);
-			toolStripMenuItem1.Name = "toolStripMenuItem1";
-			toolStripMenuItem1.Size = new System.Drawing.Size(177, 6);
-			aboutNieRExplorerToolStripMenuItem.Name = "aboutNieRExplorerToolStripMenuItem";
-			aboutNieRExplorerToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
-			aboutNieRExplorerToolStripMenuItem.Text = "About NieR:Explorer";
-			aboutNieRExplorerToolStripMenuItem.Click += new System.EventHandler(aboutNieRExplorerToolStripMenuItem_Click);
-			createDATFileToolStripMenuItem.Name = "createDATFileToolStripMenuItem";
-			createDATFileToolStripMenuItem.Size = new System.Drawing.Size(154, 22);
-			createDATFileToolStripMenuItem.Text = "Create DAT File";
-			createDATFileToolStripMenuItem.Click += new System.EventHandler(createDATFileToolStripMenuItem_Click);
-			base.AutoScaleDimensions = new System.Drawing.SizeF(6f, 13f);
-			base.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			base.ClientSize = new System.Drawing.Size(784, 561);
-			base.Controls.Add(splitContainer1);
-			base.Controls.Add(statusStrip1);
-			base.Controls.Add(menuStrip);
-			base.Icon = (System.Drawing.Icon)resources.GetObject("$this.Icon");
-			base.MainMenuStrip = menuStrip;
-			MinimumSize = new System.Drawing.Size(800, 600);
-			base.Name = "BrowserForm";
-			Text = "NieRExplorer";
-			base.FormClosing += new System.Windows.Forms.FormClosingEventHandler(BrowserForm_FormClosing);
-			base.Load += new System.EventHandler(BrowserForm_Load);
-			statusStrip1.ResumeLayout(false);
-			statusStrip1.PerformLayout();
-			splitContainer1.Panel1.ResumeLayout(false);
-			splitContainer1.Panel2.ResumeLayout(false);
-			((System.ComponentModel.ISupportInitialize)splitContainer1).EndInit();
-			splitContainer1.ResumeLayout(false);
-			tabControl.ResumeLayout(false);
-			greetTabPage.ResumeLayout(false);
-			greetPanel.ResumeLayout(false);
-			((System.ComponentModel.ISupportInitialize)mainLogoPictureBox).EndInit();
-			fileBrowserTab.ResumeLayout(false);
-			fileBrowserTab.PerformLayout();
-			toolStrip1.ResumeLayout(false);
-			toolStrip1.PerformLayout();
-			menuStrip.ResumeLayout(false);
-			menuStrip.PerformLayout();
-			ResumeLayout(false);
-			PerformLayout();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(BrowserForm));
+            this.statusStrip1 = new System.Windows.Forms.StatusStrip();
+            this.statusLabel = new System.Windows.Forms.ToolStripStatusLabel();
+            this.storageStatusLabel = new System.Windows.Forms.ToolStripStatusLabel();
+            this.explorerTreeView = new System.Windows.Forms.TreeView();
+            this.splitContainer1 = new System.Windows.Forms.SplitContainer();
+            this.tabControl = new System.Windows.Forms.TabControl();
+            this.greetTabPage = new System.Windows.Forms.TabPage();
+            this.greetPanel = new System.Windows.Forms.Panel();
+            this.label1 = new System.Windows.Forms.Label();
+            this.linkLabel2 = new System.Windows.Forms.LinkLabel();
+            this.linkLabel1 = new System.Windows.Forms.LinkLabel();
+            this.mainLogoPictureBox = new System.Windows.Forms.PictureBox();
+            this.fileBrowserTab = new System.Windows.Forms.TabPage();
+            this.toolStrip1 = new System.Windows.Forms.ToolStrip();
+            this.saveChangesCPKBtn = new System.Windows.Forms.ToolStripButton();
+            this.cpkListView = new System.Windows.Forms.ListView();
+            this.explorerListView = new System.Windows.Forms.ListView();
+            this.menuStrip = new System.Windows.Forms.MenuStrip();
+            this.editToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.createDATFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.optionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.helpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.checkForUpdatesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripSeparator();
+            this.aboutNieRExplorerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.CPKSearchBox = new System.Windows.Forms.TextBox();
+            this.statusStrip1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
+            this.splitContainer1.Panel1.SuspendLayout();
+            this.splitContainer1.Panel2.SuspendLayout();
+            this.splitContainer1.SuspendLayout();
+            this.tabControl.SuspendLayout();
+            this.greetTabPage.SuspendLayout();
+            this.greetPanel.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.mainLogoPictureBox)).BeginInit();
+            this.fileBrowserTab.SuspendLayout();
+            this.toolStrip1.SuspendLayout();
+            this.menuStrip.SuspendLayout();
+            this.SuspendLayout();
+            // 
+            // statusStrip1
+            // 
+            this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.statusLabel,
+            this.storageStatusLabel});
+            this.statusStrip1.Location = new System.Drawing.Point(0, 539);
+            this.statusStrip1.Name = "statusStrip1";
+            this.statusStrip1.Size = new System.Drawing.Size(784, 22);
+            this.statusStrip1.SizingGrip = false;
+            this.statusStrip1.TabIndex = 0;
+            this.statusStrip1.Text = "statusStrip1";
+            // 
+            // statusLabel
+            // 
+            this.statusLabel.Name = "statusLabel";
+            this.statusLabel.Size = new System.Drawing.Size(756, 17);
+            this.statusLabel.Spring = true;
+            this.statusLabel.Text = "Ready";
+            this.statusLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
+            // storageStatusLabel
+            // 
+            this.storageStatusLabel.Name = "storageStatusLabel";
+            this.storageStatusLabel.Size = new System.Drawing.Size(13, 17);
+            this.storageStatusLabel.Text = "0";
+            this.storageStatusLabel.ToolTipText = "Temp Folder Size / Drive Size";
+            // 
+            // explorerTreeView
+            // 
+            this.explorerTreeView.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.explorerTreeView.Location = new System.Drawing.Point(0, 0);
+            this.explorerTreeView.Name = "explorerTreeView";
+            this.explorerTreeView.Size = new System.Drawing.Size(261, 515);
+            this.explorerTreeView.TabIndex = 1;
+            this.explorerTreeView.NodeMouseClick += new System.Windows.Forms.TreeNodeMouseClickEventHandler(this.explorerTreeView_NodeMouseClick);
+            this.explorerTreeView.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.explorerTreeView_MouseDoubleClick);
+            // 
+            // splitContainer1
+            // 
+            this.splitContainer1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.splitContainer1.Location = new System.Drawing.Point(0, 24);
+            this.splitContainer1.Name = "splitContainer1";
+            // 
+            // splitContainer1.Panel1
+            // 
+            this.splitContainer1.Panel1.Controls.Add(this.explorerTreeView);
+            // 
+            // splitContainer1.Panel2
+            // 
+            this.splitContainer1.Panel2.Controls.Add(this.tabControl);
+            this.splitContainer1.Panel2.Controls.Add(this.explorerListView);
+            this.splitContainer1.Size = new System.Drawing.Size(784, 515);
+            this.splitContainer1.SplitterDistance = 261;
+            this.splitContainer1.TabIndex = 2;
+            // 
+            // tabControl
+            // 
+            this.tabControl.Controls.Add(this.greetTabPage);
+            this.tabControl.Controls.Add(this.fileBrowserTab);
+            this.tabControl.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tabControl.Location = new System.Drawing.Point(0, 0);
+            this.tabControl.Name = "tabControl";
+            this.tabControl.SelectedIndex = 0;
+            this.tabControl.Size = new System.Drawing.Size(519, 515);
+            this.tabControl.TabIndex = 0;
+            // 
+            // greetTabPage
+            // 
+            this.greetTabPage.Controls.Add(this.greetPanel);
+            this.greetTabPage.Location = new System.Drawing.Point(4, 22);
+            this.greetTabPage.Name = "greetTabPage";
+            this.greetTabPage.Size = new System.Drawing.Size(511, 489);
+            this.greetTabPage.TabIndex = 0;
+            this.greetTabPage.Text = "About";
+            this.greetTabPage.UseVisualStyleBackColor = true;
+            // 
+            // greetPanel
+            // 
+            this.greetPanel.AutoScroll = true;
+            this.greetPanel.Controls.Add(this.label1);
+            this.greetPanel.Controls.Add(this.linkLabel2);
+            this.greetPanel.Controls.Add(this.linkLabel1);
+            this.greetPanel.Controls.Add(this.mainLogoPictureBox);
+            this.greetPanel.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.greetPanel.Location = new System.Drawing.Point(0, 0);
+            this.greetPanel.Name = "greetPanel";
+            this.greetPanel.Size = new System.Drawing.Size(511, 489);
+            this.greetPanel.TabIndex = 1;
+            // 
+            // label1
+            // 
+            this.label1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.label1.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label1.Location = new System.Drawing.Point(3, 215);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(500, 76);
+            this.label1.TabIndex = 3;
+            this.label1.Text = "A tool made by Dennis Stanistan\r\nCredits for wmltogther for the CriPak-Tools fork" +
+    "\r\nSpecial thanks to Jeremy Jacobson (xxk_)";
+            this.label1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // linkLabel2
+            // 
+            this.linkLabel2.Location = new System.Drawing.Point(3, 314);
+            this.linkLabel2.Name = "linkLabel2";
+            this.linkLabel2.Size = new System.Drawing.Size(500, 23);
+            this.linkLabel2.TabIndex = 2;
+            this.linkLabel2.TabStop = true;
+            this.linkLabel2.Text = "https://github.com/xxk-i/DATrepacker/";
+            this.linkLabel2.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.linkLabel2.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.linkLabel2_LinkClicked);
+            // 
+            // linkLabel1
+            // 
+            this.linkLabel1.Location = new System.Drawing.Point(3, 291);
+            this.linkLabel1.Name = "linkLabel1";
+            this.linkLabel1.Size = new System.Drawing.Size(500, 23);
+            this.linkLabel1.TabIndex = 2;
+            this.linkLabel1.TabStop = true;
+            this.linkLabel1.Text = "https://github.com/wmltogether/CriPakTools";
+            this.linkLabel1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.linkLabel1.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.linkLabel1_LinkClicked);
+            // 
+            // mainLogoPictureBox
+            // 
+            this.mainLogoPictureBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.mainLogoPictureBox.BackgroundImage = global::NieRExplorer.Properties.Resources.cover;
+            this.mainLogoPictureBox.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Center;
+            this.mainLogoPictureBox.Location = new System.Drawing.Point(3, 3);
+            this.mainLogoPictureBox.Name = "mainLogoPictureBox";
+            this.mainLogoPictureBox.Size = new System.Drawing.Size(505, 199);
+            this.mainLogoPictureBox.TabIndex = 0;
+            this.mainLogoPictureBox.TabStop = false;
+            // 
+            // fileBrowserTab
+            // 
+            this.fileBrowserTab.Controls.Add(this.CPKSearchBox);
+            this.fileBrowserTab.Controls.Add(this.toolStrip1);
+            this.fileBrowserTab.Controls.Add(this.cpkListView);
+            this.fileBrowserTab.Location = new System.Drawing.Point(4, 22);
+            this.fileBrowserTab.Name = "fileBrowserTab";
+            this.fileBrowserTab.Size = new System.Drawing.Size(511, 489);
+            this.fileBrowserTab.TabIndex = 0;
+            this.fileBrowserTab.Text = "File Browser";
+            this.fileBrowserTab.UseVisualStyleBackColor = true;
+            // 
+            // toolStrip1
+            // 
+            this.toolStrip1.GripStyle = System.Windows.Forms.ToolStripGripStyle.Hidden;
+            this.toolStrip1.ImageScalingSize = new System.Drawing.Size(30, 30);
+            this.toolStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.saveChangesCPKBtn});
+            this.toolStrip1.Location = new System.Drawing.Point(0, 0);
+            this.toolStrip1.Name = "toolStrip1";
+            this.toolStrip1.Size = new System.Drawing.Size(511, 37);
+            this.toolStrip1.TabIndex = 1;
+            this.toolStrip1.Text = "toolStrip1";
+            // 
+            // saveChangesCPKBtn
+            // 
+            this.saveChangesCPKBtn.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.saveChangesCPKBtn.Enabled = false;
+            this.saveChangesCPKBtn.Image = ((System.Drawing.Image)(resources.GetObject("saveChangesCPKBtn.Image")));
+            this.saveChangesCPKBtn.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.saveChangesCPKBtn.Name = "saveChangesCPKBtn";
+            this.saveChangesCPKBtn.Size = new System.Drawing.Size(34, 34);
+            this.saveChangesCPKBtn.Text = "Save Changes";
+            this.saveChangesCPKBtn.Click += new System.EventHandler(this.saveChangesCPKBtn_Click);
+            // 
+            // cpkListView
+            // 
+            this.cpkListView.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.cpkListView.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.cpkListView.FullRowSelect = true;
+            this.cpkListView.HideSelection = false;
+            this.cpkListView.Location = new System.Drawing.Point(0, 40);
+            this.cpkListView.MultiSelect = false;
+            this.cpkListView.Name = "cpkListView";
+            this.cpkListView.Size = new System.Drawing.Size(511, 449);
+            this.cpkListView.TabIndex = 0;
+            this.cpkListView.UseCompatibleStateImageBehavior = false;
+            // 
+            // explorerListView
+            // 
+            this.explorerListView.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.explorerListView.FullRowSelect = true;
+            this.explorerListView.HideSelection = false;
+            this.explorerListView.Location = new System.Drawing.Point(0, 0);
+            this.explorerListView.MultiSelect = false;
+            this.explorerListView.Name = "explorerListView";
+            this.explorerListView.Size = new System.Drawing.Size(519, 515);
+            this.explorerListView.TabIndex = 0;
+            this.explorerListView.UseCompatibleStateImageBehavior = false;
+            this.explorerListView.View = System.Windows.Forms.View.Details;
+            // 
+            // menuStrip
+            // 
+            this.menuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.editToolStripMenuItem,
+            this.helpToolStripMenuItem});
+            this.menuStrip.Location = new System.Drawing.Point(0, 0);
+            this.menuStrip.Name = "menuStrip";
+            this.menuStrip.Size = new System.Drawing.Size(784, 24);
+            this.menuStrip.TabIndex = 3;
+            this.menuStrip.Text = "menuStrip1";
+            // 
+            // editToolStripMenuItem
+            // 
+            this.editToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.createDATFileToolStripMenuItem,
+            this.optionsToolStripMenuItem});
+            this.editToolStripMenuItem.Name = "editToolStripMenuItem";
+            this.editToolStripMenuItem.Size = new System.Drawing.Size(39, 20);
+            this.editToolStripMenuItem.Text = "Edit";
+            // 
+            // createDATFileToolStripMenuItem
+            // 
+            this.createDATFileToolStripMenuItem.Name = "createDATFileToolStripMenuItem";
+            this.createDATFileToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+            this.createDATFileToolStripMenuItem.Text = "Create DAT File";
+            this.createDATFileToolStripMenuItem.Click += new System.EventHandler(this.createDATFileToolStripMenuItem_Click);
+            // 
+            // optionsToolStripMenuItem
+            // 
+            this.optionsToolStripMenuItem.Name = "optionsToolStripMenuItem";
+            this.optionsToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+            this.optionsToolStripMenuItem.Text = "Options";
+            this.optionsToolStripMenuItem.Click += new System.EventHandler(this.optionsToolStripMenuItem_Click);
+            // 
+            // helpToolStripMenuItem
+            // 
+            this.helpToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.checkForUpdatesToolStripMenuItem,
+            this.toolStripMenuItem1,
+            this.aboutNieRExplorerToolStripMenuItem});
+            this.helpToolStripMenuItem.Name = "helpToolStripMenuItem";
+            this.helpToolStripMenuItem.Size = new System.Drawing.Size(44, 20);
+            this.helpToolStripMenuItem.Text = "Help";
+            // 
+            // checkForUpdatesToolStripMenuItem
+            // 
+            this.checkForUpdatesToolStripMenuItem.Name = "checkForUpdatesToolStripMenuItem";
+            this.checkForUpdatesToolStripMenuItem.Size = new System.Drawing.Size(181, 22);
+            this.checkForUpdatesToolStripMenuItem.Text = "Check for Updates";
+            this.checkForUpdatesToolStripMenuItem.Click += new System.EventHandler(this.checkForUpdatesToolStripMenuItem_Click);
+            // 
+            // toolStripMenuItem1
+            // 
+            this.toolStripMenuItem1.Name = "toolStripMenuItem1";
+            this.toolStripMenuItem1.Size = new System.Drawing.Size(178, 6);
+            // 
+            // aboutNieRExplorerToolStripMenuItem
+            // 
+            this.aboutNieRExplorerToolStripMenuItem.Name = "aboutNieRExplorerToolStripMenuItem";
+            this.aboutNieRExplorerToolStripMenuItem.Size = new System.Drawing.Size(181, 22);
+            this.aboutNieRExplorerToolStripMenuItem.Text = "About NieR:Explorer";
+            this.aboutNieRExplorerToolStripMenuItem.Click += new System.EventHandler(this.aboutNieRExplorerToolStripMenuItem_Click);
+            // 
+            // CPKSearchBox
+            // 
+            this.CPKSearchBox.Location = new System.Drawing.Point(351, 14);
+            this.CPKSearchBox.Name = "CPKSearchBox";
+            this.CPKSearchBox.Size = new System.Drawing.Size(152, 20);
+            this.CPKSearchBox.TabIndex = 2;
+            this.CPKSearchBox.TextChanged += new System.EventHandler(this.CPKSearchBox_TextChanged);
+            // 
+            // BrowserForm
+            // 
+            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.ClientSize = new System.Drawing.Size(784, 561);
+            this.Controls.Add(this.splitContainer1);
+            this.Controls.Add(this.statusStrip1);
+            this.Controls.Add(this.menuStrip);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            this.MainMenuStrip = this.menuStrip;
+            this.MinimumSize = new System.Drawing.Size(800, 600);
+            this.Name = "BrowserForm";
+            this.Text = "NieRExplorer";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.BrowserForm_FormClosing);
+            this.Load += new System.EventHandler(this.BrowserForm_Load);
+            this.statusStrip1.ResumeLayout(false);
+            this.statusStrip1.PerformLayout();
+            this.splitContainer1.Panel1.ResumeLayout(false);
+            this.splitContainer1.Panel2.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).EndInit();
+            this.splitContainer1.ResumeLayout(false);
+            this.tabControl.ResumeLayout(false);
+            this.greetTabPage.ResumeLayout(false);
+            this.greetPanel.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.mainLogoPictureBox)).EndInit();
+            this.fileBrowserTab.ResumeLayout(false);
+            this.fileBrowserTab.PerformLayout();
+            this.toolStrip1.ResumeLayout(false);
+            this.toolStrip1.PerformLayout();
+            this.menuStrip.ResumeLayout(false);
+            this.menuStrip.PerformLayout();
+            this.ResumeLayout(false);
+            this.PerformLayout();
+
 		}
-	}
+    }
 }

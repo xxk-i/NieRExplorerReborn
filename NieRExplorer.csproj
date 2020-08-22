@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <ProjectGuid>{41AA4175-72DC-4F71-9B85-04EF48BBC48A}</ProjectGuid>
@@ -61,7 +61,9 @@
     <Compile Include="NieRExplorer.Properties\Resources.cs" />
     <Compile Include="NieRExplorer.Properties\Settings.cs" />
     <Compile Include="NieRExplorer.Python\Python3.cs" />
-    <Compile Include="NieRExplorer\BrowserForm.cs" />
+    <Compile Include="NieRExplorer\BrowserForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="NieRExplorer\NativeMethods.cs" />
     <Compile Include="NieRExplorer\OptionsForm.cs" />
     <Compile Include="NieRExplorer\Program.cs" />
