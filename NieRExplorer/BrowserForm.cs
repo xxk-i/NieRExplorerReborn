@@ -1147,8 +1147,7 @@ namespace NieRExplorer
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(500, 76);
             this.label1.TabIndex = 3;
-            this.label1.Text = "A tool made by Dennis Stanistan\r\nCredits for wmltogther for the CriPak-Tools fork" +
-    "\r\nSpecial thanks to Jeremy Jacobson (xxk_)";
+			this.label1.Text = "NierExplorer: Reborn\r\nImprovements to original NieRExplorer by Dennis Stanistanr\nCredits for wmltogther for the CriPak-Tools fork";
             this.label1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // linkLabel2
