@@ -1370,14 +1370,16 @@ namespace NieRExplorer
 
         private void changeBaseDirectoryToolStripMenuItem_Click(object sender, EventArgs e)
         {
-			CommonOpenFileDialog folderBrowserDialog = new Microsoft.WindowsAPICodePack.Dialogs.CommonOpenFileDialog();
+			CommonOpenFileDialog folderBrowserDialog = new CommonOpenFileDialog();
 
 			folderBrowserDialog.IsFolderPicker = true;
+			folderBrowserDialog.InitialDirectory = gamePath;
 			CommonFileDialogResult result = folderBrowserDialog.ShowDialog();
 
 			if (result == CommonFileDialogResult.Ok)
             {
-				ListDirectory(explorerTreeView, folderBrowserDialog.FileName);
+				gamePath = folderBrowserDialog.FileName;
+				ListDirectory(explorerTreeView, gamePath);
             }
         }
     }
