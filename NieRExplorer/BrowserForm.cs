@@ -12,6 +12,7 @@ using System.Linq;
 using System.Media;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Microsoft.WindowsAPICodePack.Dialogs;
 
 namespace NieRExplorer
 {
@@ -105,6 +106,7 @@ namespace NieRExplorer
 		private Label label1;
 
 		private ToolStripMenuItem createDATFileToolStripMenuItem;
+        private ToolStripMenuItem changeBaseDirectoryToolStripMenuItem;
         private TextBox CPKSearchBox;
 
 		public BrowserForm()
@@ -976,18 +978,19 @@ namespace NieRExplorer
 
 		private void createDATFileToolStripMenuItem_Click(object sender, EventArgs e)
 		{
-			FolderBrowserDialog folderBrowserDialog = new FolderBrowserDialog();
-			if (folderBrowserDialog.ShowDialog() != DialogResult.OK)
-			{
+			CommonOpenFileDialog folderBrowserDialog = new CommonOpenFileDialog();
+			folderBrowserDialog.IsFolderPicker = true;
+			if (folderBrowserDialog.ShowDialog() != CommonFileDialogResult.Ok)
+            {
 				return;
-			}
+            }
 			SaveFileDialog saveFileDialog = new SaveFileDialog();
 			saveFileDialog.Filter = "DAT File|*dat";
 			saveFileDialog.Title = "Save DAT file";
-			saveFileDialog.FileName = "GeneratedDAT.dat";
+			saveFileDialog.FileName = new DirectoryInfo(folderBrowserDialog.FileName).Name + ".dat";
 			if (saveFileDialog.ShowDialog() == DialogResult.OK)
 			{
-				if (GenerateDAT(folderBrowserDialog.SelectedPath, saveFileDialog.FileName))
+				if (GenerateDAT(folderBrowserDialog.FileName, saveFileDialog.FileName))
 				{
 					MessageBox.Show("DAT file saved.");
 				}
@@ -1023,6 +1026,7 @@ namespace NieRExplorer
             this.linkLabel1 = new System.Windows.Forms.LinkLabel();
             this.mainLogoPictureBox = new System.Windows.Forms.PictureBox();
             this.fileBrowserTab = new System.Windows.Forms.TabPage();
+            this.CPKSearchBox = new System.Windows.Forms.TextBox();
             this.toolStrip1 = new System.Windows.Forms.ToolStrip();
             this.saveChangesCPKBtn = new System.Windows.Forms.ToolStripButton();
             this.cpkListView = new System.Windows.Forms.ListView();
@@ -1035,7 +1039,7 @@ namespace NieRExplorer
             this.checkForUpdatesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripSeparator();
             this.aboutNieRExplorerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.CPKSearchBox = new System.Windows.Forms.TextBox();
+            this.changeBaseDirectoryToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.statusStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
@@ -1148,7 +1152,8 @@ namespace NieRExplorer
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(500, 76);
             this.label1.TabIndex = 3;
-			this.label1.Text = "NierExplorer: Reborn\r\nImprovements to original NieRExplorer by Dennis Stanistanr\nCredits for wmltogther for the CriPak-Tools fork";
+            this.label1.Text = "NierExplorer: Reborn\r\nImprovements to original NieRExplorer by Dennis Stanistanr\n" +
+    "Credits for wmltogther for the CriPak-Tools fork";
             this.label1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // linkLabel2
@@ -1196,6 +1201,14 @@ namespace NieRExplorer
             this.fileBrowserTab.TabIndex = 0;
             this.fileBrowserTab.Text = "File Browser";
             this.fileBrowserTab.UseVisualStyleBackColor = true;
+            // 
+            // CPKSearchBox
+            // 
+            this.CPKSearchBox.Location = new System.Drawing.Point(351, 14);
+            this.CPKSearchBox.Name = "CPKSearchBox";
+            this.CPKSearchBox.Size = new System.Drawing.Size(152, 20);
+            this.CPKSearchBox.TabIndex = 2;
+            this.CPKSearchBox.TextChanged += new System.EventHandler(this.CPKSearchBox_TextChanged);
             // 
             // toolStrip1
             // 
@@ -1262,6 +1275,7 @@ namespace NieRExplorer
             // editToolStripMenuItem
             // 
             this.editToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.changeBaseDirectoryToolStripMenuItem,
             this.createDATFileToolStripMenuItem,
             this.optionsToolStripMenuItem});
             this.editToolStripMenuItem.Name = "editToolStripMenuItem";
@@ -1271,14 +1285,14 @@ namespace NieRExplorer
             // createDATFileToolStripMenuItem
             // 
             this.createDATFileToolStripMenuItem.Name = "createDATFileToolStripMenuItem";
-            this.createDATFileToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+            this.createDATFileToolStripMenuItem.Size = new System.Drawing.Size(193, 22);
             this.createDATFileToolStripMenuItem.Text = "Create DAT File";
             this.createDATFileToolStripMenuItem.Click += new System.EventHandler(this.createDATFileToolStripMenuItem_Click);
             // 
             // optionsToolStripMenuItem
             // 
             this.optionsToolStripMenuItem.Name = "optionsToolStripMenuItem";
-            this.optionsToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+            this.optionsToolStripMenuItem.Size = new System.Drawing.Size(193, 22);
             this.optionsToolStripMenuItem.Text = "Options";
             this.optionsToolStripMenuItem.Click += new System.EventHandler(this.optionsToolStripMenuItem_Click);
             // 
@@ -1311,13 +1325,12 @@ namespace NieRExplorer
             this.aboutNieRExplorerToolStripMenuItem.Text = "About NieR:Explorer";
             this.aboutNieRExplorerToolStripMenuItem.Click += new System.EventHandler(this.aboutNieRExplorerToolStripMenuItem_Click);
             // 
-            // CPKSearchBox
+            // changeBaseDirectoryToolStripMenuItem
             // 
-            this.CPKSearchBox.Location = new System.Drawing.Point(351, 14);
-            this.CPKSearchBox.Name = "CPKSearchBox";
-            this.CPKSearchBox.Size = new System.Drawing.Size(152, 20);
-            this.CPKSearchBox.TabIndex = 2;
-            this.CPKSearchBox.TextChanged += new System.EventHandler(this.CPKSearchBox_TextChanged);
+            this.changeBaseDirectoryToolStripMenuItem.Name = "changeBaseDirectoryToolStripMenuItem";
+            this.changeBaseDirectoryToolStripMenuItem.Size = new System.Drawing.Size(193, 22);
+            this.changeBaseDirectoryToolStripMenuItem.Text = "Change Base Directory";
+            this.changeBaseDirectoryToolStripMenuItem.Click += new System.EventHandler(this.changeBaseDirectoryToolStripMenuItem_Click);
             // 
             // BrowserForm
             // 
@@ -1354,5 +1367,18 @@ namespace NieRExplorer
             this.PerformLayout();
 
 		}
+
+        private void changeBaseDirectoryToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+			CommonOpenFileDialog folderBrowserDialog = new Microsoft.WindowsAPICodePack.Dialogs.CommonOpenFileDialog();
+
+			folderBrowserDialog.IsFolderPicker = true;
+			CommonFileDialogResult result = folderBrowserDialog.ShowDialog();
+
+			if (result == CommonFileDialogResult.Ok)
+            {
+				ListDirectory(explorerTreeView, folderBrowserDialog.FileName);
+            }
+        }
     }
 }
